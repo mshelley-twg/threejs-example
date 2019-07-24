@@ -1,23 +1,14 @@
 {
   "name": "threejs-example",
-  "version": "1.0.0",
-  "description": "Playing around with three.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mshelley-twg/threejs-example.git"
-  },
-  "author": "",
-  "license": "ISC",
+  "version": "0.1.0",
   "private": true,
-  "bugs": {
-    "url": "https://github.com/mshelley-twg/threejs-example/issues"
-  },
-  "homepage": "https://github.com/mshelley-twg/threejs-example#readme",
   "scripts": {
     "build": "webpack",
+    "lint": "standard",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "standard": "^13.1.0",
     "three": "^0.106.2"
   },
   "devDependencies": {
