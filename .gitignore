@@ -1,2 +1,6 @@
-node_modules
-dist
+# Ignore
+/node_modules
+/dist
+
+# Allow
+!dist/index.html
