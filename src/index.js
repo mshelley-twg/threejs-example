@@ -1,8 +1,14 @@
 import * as THREE from 'three'
 
-const createCamera = () => {
-  return new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+const KEYS = {
+  W: 'KeyW',
+  A: 'KeyA',
+  S: 'KeyS',
+  D: 'KeyD'
 }
+
+const CAMERA_DISTANCE_TO_PLAYER = 5
+const PLAYER_SPEED = 4
 
 const createRenderer = ({ clearColor = 0x000000 }) => {
   const renderer = new THREE.WebGLRenderer()
@@ -14,9 +20,13 @@ const createRenderer = ({ clearColor = 0x000000 }) => {
   return renderer
 }
 
-const createCube = (width, height, depth, meshProps) => {
+const createCamera = () => {
+  return new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+}
+
+const createCube = (width, height, depth, materialProps) => {
   const geometry = new THREE.BoxGeometry(width, height, depth)
-  const material = new THREE.MeshBasicMaterial(meshProps)
+  const material = new THREE.MeshBasicMaterial(materialProps)
 
   return new THREE.Mesh(geometry, material)
 }
@@ -26,31 +36,81 @@ class Game {
     this.renderer = createRenderer({ clearColor: 0x336699 })
     this.scene = new THREE.Scene()
     this.camera = createCamera()
-    this.cube = createCube(1, 1, 1, { color: 0x888888 })
+    this.player = createCube(1, 1, 1, { color: 0x888888 })
+    this.grid = new THREE.GridHelper(10, 10)
+    this.lastFrameTime = null
+    this.keys = {}
 
     this.loop = this.loop.bind(this)
   }
 
+  isKeyPressed (key) {
+    return this.keys[key] || false
+  }
+
   start () {
+    this.setupEventListeners()
     this.createScene()
     this.loop()
   }
 
+  setupEventListeners () {
+    document.addEventListener('keydown', event => {
+      this.keys[event.code] = true
+    })
+    document.addEventListener('keyup', event => {
+      this.keys[event.code] = false
+    })
+  }
+
   createScene () {
-    this.scene.add(this.cube)
-    this.camera.position.z = 5
+    this.scene.add(this.grid)
+    this.scene.add(this.player)
+
+    // Camera
+    this.camera.position.set(0, 5, 5)
+    this.camera.lookAt(0, 0, 0)
   }
 
-  loop () {
-    window.requestAnimationFrame(this.loop)
+  loop (time) {
+    // Find how much time has passed since the last frame in seconds
+    if (!this.lastFrameTime) {
+      this.lastFrameTime = time
+    }
 
-    this.update()
+    // Convert from ms to s
+    const elapsedTime = (time - this.lastFrameTime) / 1000
+    this.lastFrameTime = time
+
+    this.update(elapsedTime)
     this.render()
+
+    window.requestAnimationFrame(this.loop)
   }
 
-  update () {
-    this.cube.rotation.x += 0.01
-    this.cube.rotation.y += 0.01
+  update (elapsedTime) {
+    // Find the player position on the ground relative to the camera
+    // We remove Y so we only move along the grid
+    const forwardVector = this.player.position.clone().sub(this.camera.position).setY(0).normalize()
+    const rightVector = new THREE.Vector3(forwardVector.z, 0, -forwardVector.x)
+
+    if (this.isKeyPressed(KEYS.W)) {
+      this.player.position.add(forwardVector.multiplyScalar(PLAYER_SPEED * elapsedTime))
+    }
+    if (this.isKeyPressed(KEYS.S)) {
+      this.player.position.sub(forwardVector.multiplyScalar(PLAYER_SPEED * elapsedTime))
+    }
+    if (this.isKeyPressed(KEYS.A)) {
+      this.player.position.add(rightVector.multiplyScalar(PLAYER_SPEED * elapsedTime))
+    }
+    if (this.isKeyPressed(KEYS.D)) {
+      this.player.position.sub(rightVector.multiplyScalar(PLAYER_SPEED * elapsedTime))
+    }
+
+    // Move the camera to follow the player from a fixed length
+    this.camera.lookAt(this.player.position)
+    const playerToCameraVector = this.camera.position.clone().sub(this.player.position).setLength(CAMERA_DISTANCE_TO_PLAYER)
+    this.camera.position.copy(this.player.position.clone().add(playerToCameraVector))
   }
 
   render () {
