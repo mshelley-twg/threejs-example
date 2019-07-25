@@ -26,9 +26,16 @@ const createCamera = () => {
 
 const createCube = (width, height, depth, materialProps) => {
   const geometry = new THREE.BoxGeometry(width, height, depth)
-  const material = new THREE.MeshBasicMaterial(materialProps)
+  const material = new THREE.MeshPhongMaterial(materialProps)
 
   return new THREE.Mesh(geometry, material)
+}
+
+const createLight = (x, y, z, color, intensity) => {
+  const light = new THREE.DirectionalLight(color, intensity)
+  light.position.set(x, y, z)
+
+  return light
 }
 
 class Game {
@@ -38,14 +45,11 @@ class Game {
     this.camera = createCamera()
     this.player = createCube(1, 1, 1, { color: 0x888888 })
     this.grid = new THREE.GridHelper(10, 10)
+    this.light = createLight(4, 4, 4, 0xFFFFFF, 1)
     this.lastFrameTime = null
     this.keys = {}
 
     this.loop = this.loop.bind(this)
-  }
-
-  isKeyPressed (key) {
-    return this.keys[key] || false
   }
 
   start () {
@@ -63,9 +67,14 @@ class Game {
     })
   }
 
+  isKeyPressed (key) {
+    return this.keys[key] || false
+  }
+
   createScene () {
     this.scene.add(this.grid)
     this.scene.add(this.player)
+    this.scene.add(this.light)
 
     // Camera
     this.camera.position.set(0, 5, 5)
